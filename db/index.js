@@ -125,10 +125,10 @@ async function getPostsByUser(userId) {
 
 async function getUserById(userId) {
   // first get the user (NOTE: Remember the query returns 
-  // (1) an object that contains 
-  // (2) a `rows` array that (in this case) will contain 
-  // (3) one object, which is our user.
-  // if it doesn't exist (if there are no `rows` or `rows.length`), return null
+  // (1) an object that contains -DONE
+  // (2) a `rows` array that (in this case) will contain  -DONE
+  // (3) one object, which is our user. -DONE
+  // if it doesn't exist (if there are no `rows` or `rows.length`), return null -DONE
 
   try {
     const { rows } = await client.query(`
@@ -173,16 +173,24 @@ async function createTags(tagList) {
   try {
     // insert the tags, doing nothing on conflict
     // returning nothing, we'll query after
+    
     await client.query(`
-      INSERT INTO post_tags("postId", "tagId")
-      VALUES ($1, $2, $3)
-      ${insertValues}
-      ON CONFLICT ("postId", "tagId") DO NOTHING;
-    `);
+      INSERT INTO tags(name)
+      VALUES (${insertValues})
+      ON CONFLICT (name) DO NOTHING;
+    `, tagList);
     // select all tags where the name is in our taglist
     // return the rows from the query
+    const { rows } = await client.query(`
+    SELECT * FROM tags
+    WHERE name
+    IN (${selectValues});
+    `, tagList);
     
+   //console.log(rows); 
 
+   return rows;
+    
   } catch (error) {
     throw error;
   }
