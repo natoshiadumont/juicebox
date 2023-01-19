@@ -1,6 +1,8 @@
 const { Client } = require('pg');
-
 const client = new Client('postgres://localhost:5432/juicebox-dev');
+const PORT = 3000;
+const express = require('express');
+const server = express();
 
 async function createUser({ username, password, name, location }) {
   try {
@@ -194,6 +196,8 @@ async function getUserById(userId) {
   }
 }
 
+
+
 async function createTags(tagList) {
   if (tagList.length === 0) { 
     return; 
@@ -309,6 +313,11 @@ async function getPostsByTagName(tagName) {
     throw error;
   }
 } 
+
+
+server.listen(PORT, () => {
+  console.log('The server is up on port', PORT);
+});
 
 module.exports = {
   client,

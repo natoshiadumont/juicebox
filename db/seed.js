@@ -138,7 +138,6 @@ async function testDB() {
     console.log("Calling getPostsByTagName with #happy");
     const postsWithHappy = await getPostsByTagName("#happy");
     console.log("Result:", postsWithHappy);
-    
     console.log("Finished database tests!");
   } catch (error) {
     console.log("Error during testDB");
