@@ -168,12 +168,12 @@ async function getUserById(userId) {
   // if it doesn't exist (if there are no `rows` or `rows.length`), return null -DONE
 
   try {
-    const { rows } = await client.query(`
-      SELECT * FROM posts
-      WHERE "authorId"=${userId};
+    const { rows: [user] } = await client.query(`
+      SELECT * FROM users
+      WHERE "id"=${userId};
     `);
 
-    if (rows && rows.length === 0) {
+    if (!user) {
       return null;
     }
     // if it does:
@@ -182,11 +182,11 @@ async function getUserById(userId) {
     // then add the posts to the user object with key 'posts' (DONE)
     // return the user object (DONE)
 
-    delete rows.password;
+    delete user.password;
     const userPosts = await getPostsByUser(userId);
-    rows.posts = await userPosts;
-
-    return rows;
+    user.posts = userPosts;
+  
+    return user;
   } catch (error) {
     throw error;
   }
@@ -293,6 +293,15 @@ async function getPostById(postId) {
       WHERE id=$1;
     `, [postId]);
 
+    // THIS IS NEW
+    if (!post) {
+      throw {
+        name: "PostNotFoundError",
+        message: "Could not find a post with that postId"
+      };
+    }
+    // NEWNESS ENDS HERE
+
     const { rows: tags } = await client.query(`
       SELECT tags.*
       FROM tags
@@ -310,7 +319,7 @@ async function getPostById(postId) {
     post.author = author;
 
     delete post.authorId;
-    // console.log(post);
+
     return post;
   } catch (error) {
     throw error;

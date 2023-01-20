@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = process.env;
 const postsRouter = express.Router();
-const { getAllPosts } = require('../db');
+const { getAllPosts, getPostById, updatePost } = require('../db');
 const { requireUser } = require('./utils');
 
 
@@ -15,12 +15,20 @@ postsRouter.post('/', requireUser, async (req, res, next) => {
   res.send({ message: 'under construction' });
 });
 
-postsRouter.get('/', async (req, res) => {
-  const posts = await getAllPosts();
+postsRouter.get('/', async (req, res, next) => {
+  try {
+    const allPosts = await getAllPosts();
 
-  res.send({
-    posts
-  });
+    const posts = allPosts.filter(post => {
+      return post.active || (req.user && post.author.id === req.user.id);
+    });
+
+    res.send({
+      posts
+    });
+  } catch ({ name, message }) {
+    next({ name, message });
+  }
 });
 
 postsRouter.post('/', requireUser, async (req, res, next) => {
@@ -49,20 +57,45 @@ postsRouter.post('/', requireUser, async (req, res, next) => {
     postData.content = content;
 
     const post = await createPost(postData);
-    
+
     // this will create the post and the tags for us
     // if the post comes back, res.send({ post });
-    if(post){
+    if (post) {
       console.log(post);
-      res.send({post})
+      res.send({ post })
     }
     // otherwise, next an appropriate error object 
   } catch ({ name, message }) {
-    next({ 
+    next({
       name: 'Trouble Creating a Post',
-      message: 'Make sure to provide at least a title and content'});
+      message: 'Make sure to provide at least a title and content'
+    });
   }
 });
 
+postsRouter.delete('/:postId', requireUser, async (req, res, next) => {
+  try {
+    const post = await getPostById(req.params.postId);
+    console.log(req.user);
+    console.log(post);
+    if (post && post.author.id === req.user.id) {
+      const updatedPost = await updatePost(post.id, { active: false });
+      console.log(updatedPost);
+      res.send({ post: updatedPost });
+    } else {
+      // if there was a post, throw UnauthorizedUserError, otherwise throw PostNotFoundError
+      next(post ? {
+        name: "UnauthorizedUserError",
+        message: "You cannot delete a post which is not yours"
+      } : {
+        name: "PostNotFoundError",
+        message: "That post does not exist"
+      });
+    }
+
+  } catch ({ name, message }) {
+    next({ name, message })
+  }
+});
 
 module.exports = postsRouter;
